@@ -1,0 +1,107 @@
+<!doctype html>
+
+<html ng-app="myApp">
+
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
+		<style>h4 { margin: 0; }</style>
+	</head>
+
+	<body>
+
+		<div ng-controller="ListController">
+			<h4>
+				<span>Name List</span>
+				<span><button ng-click="sortBy('name')">Sort by Name</button></span>
+				<span><input type="text" placeholder="Search" ng-model="userSearch"></span>
+			</h4>
+			<small>(Click name to edit)</small>
+			<ul>
+				<li ng-repeat="item in list | orderBy:propertyName:reverse | filter:userSearch">
+					<div contentEditable="true" ng-bind-html-unsafe="name" ng-model="name" data-item-id="{{item.id}}">{{item.name}}</div>
+				</li>
+			</ul>
+		</div>
+
+		<script type="text/javascript">
+
+		// people list
+		var people = [
+			{ id: "0", name: "Randell" }
+			, { id: "1", name: "Efrelyn" }
+			, { id: "2", name: "Elise" }
+			, { id: "3", name: "Arnold" }
+			, { id: "4", name: "Chelsea" }
+			, { id: "5", name: "Mario" }
+			, { id: "6", name: "Umbra" }
+		];
+
+		angular.module('myApp', [])
+
+			.controller('ListController', function($scope, $filter) {
+
+				// default
+				$scope.list = people;
+				$scope.propertyName = 'age';
+				$scope.reverse = true;
+
+				// listen on name update
+				$scope.$on('updatelist', function(evt, data) {
+					$filter('filter')($scope.list, { id: data.id })[0].name = data.newVal;
+				});
+
+				// sort function
+				$scope.sortBy = function(propertyName) {
+					$scope.reverse = ($scope.propertyName === propertyName) ? !$scope.reverse : false;
+					$scope.propertyName = propertyName;
+				};
+
+			})
+			.directive('contenteditable', function($rootScope) {
+				return {
+					require: 'ngModel',
+					link: function(scope, elm, attrs, ctrl) {
+
+						// clean string
+						function cleanString(str) {
+							return String(str).replace(/<[^>]+>/gm, '');
+						}
+
+						// to change the view value
+						elm.bind('blur', function() {
+							scope.$apply(function() {
+								$rootScope.$broadcast('updatelist', {
+									id: elm[0].dataset.itemId
+									, newVal: cleanString(elm.html())
+								});
+								ctrl.$setViewValue(elm.html());
+							});
+						});
+
+						// view needs to be updated
+						ctrl.render = function(value) {
+							elm.html(value);
+						};
+
+						// set init value
+						ctrl.$setViewValue(elm.html());
+
+						// check esc key, end editing
+						elm.bind('keydown', function(event) {
+							var esc = event.which == 27,
+							el = event.target;
+							if (esc) {
+								ctrl.$setViewValue(elm.html());
+								el.blur();
+								event.preventDefault();
+							}
+						});
+
+					}
+				};
+			});
+
+		</script>
+
+	</body>
+</html>
