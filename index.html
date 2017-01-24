@@ -3,25 +3,83 @@
 <html ng-app="myApp">
 
 	<head>
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/css/materialize.min.css">
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
-		<style>h4 { margin: 0; }</style>
+		<style>
+			h4 {
+				margin: 0;
+			}
+			a {
+				font-size: 14px;
+			}
+			.header {
+				color: #ee6e73;
+				font-weight: 300;
+			}
+			.collection a.collection-item {
+				cursor: pointer;
+			}
+			.collection a.collection-item.focused,
+			.collection a.collection-item.focused:hover {
+				background-color: #fff;
+			}
+			.collection a.collection-item span {
+				display: block;
+				outline: none;
+				border-bottom: 0px solid #9e9e9e;
+				transition: all 0.3s;
+			}
+			.collection a.collection-item span:focus {
+				outline: none;
+				border-bottom: 1px solid #4CAF50;
+				box-shadow: 0 1px 0 0 #4CAF50;
+			}
+			.btn {
+				padding: 0 1em;
+				height: 28px;
+				line-height: 28px;
+				font-size: 12px;
+			}
+			.btn i {
+				margin-left: 0;
+			}
+		</style>
 	</head>
 
 	<body>
 
-		<div ng-controller="ListController">
-			<h4>
-				<span>Name List</span>
-				<span><button ng-click="sortBy('name')">Sort by Name</button></span>
-				<span><input type="text" placeholder="Search" ng-model="userSearch"></span>
-			</h4>
-			<small>(Click name to edit)</small>
-			<ul>
-				<li ng-repeat="item in list | orderBy:propertyName:reverse | filter:userSearch">
-					<div contentEditable="true" ng-bind-html-unsafe="name" ng-model="name" data-item-id="{{item.id}}">{{item.name}}</div>
-				</li>
-			</ul>
-		</div>
+		<main ng-controller="ListController">
+			
+			<div class="container">
+				
+				<div class="row">
+					
+					<div class="col s12 m10 offset-m1">
+						<h2 class="header">
+							<span>Names</span>
+							<span>
+								<a class="waves-effect waves-light btn" ng-click="sortBy('name')"><i class="material-icons right">swap_vert</i></a>
+							</span>
+						</h2>
+
+						<div class="input-field">
+							<i class="material-icons prefix">search</i>
+							<input type="text" placeholder="Search by Name" id="icon_prefix" ng-model="userSearch">
+						</div>
+
+						<div class="collection">
+							<a class="collection-item" ng-repeat="item in list | orderBy:propertyName:reverse | filter:userSearch">
+								<span contentEditable="true" ng-model="name" data-item-id="{{item.id}}" data-item-name="name">{{item.name}}</span>
+							</a>
+						</div>
+					</div>
+
+				</div>
+
+			</div>
+
+		</main>
 
 		<script type="text/javascript">
 
@@ -42,12 +100,12 @@
 
 				// default
 				$scope.list = people;
-				$scope.propertyName = 'age';
+				$scope.propertyName = 'name';
 				$scope.reverse = true;
 
 				// listen on name update
 				$scope.$on('updatelist', function(evt, data) {
-					$filter('filter')($scope.list, { id: data.id })[0].name = data.newVal;
+					$filter('filter')($scope.list, { id: data.id })[0][data.prop] = data.newVal;
 				});
 
 				// sort function
@@ -67,11 +125,17 @@
 							return String(str).replace(/<[^>]+>/gm, '');
 						}
 
+						elm.bind('focus', function() {
+							elm.parent().addClass('focused');
+						});
+
 						// to change the view value
 						elm.bind('blur', function() {
+							elm.parent().removeClass('focused');
 							scope.$apply(function() {
 								$rootScope.$broadcast('updatelist', {
 									id: elm[0].dataset.itemId
+									, prop: elm[0].dataset.itemName
 									, newVal: cleanString(elm.html())
 								});
 								ctrl.$setViewValue(elm.html());
